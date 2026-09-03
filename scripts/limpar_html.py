@@ -98,5 +98,37 @@ def limpar(bruto: str) -> str:
     return html[:MAX_CARACTERES]
 
 
+# --------------------------------------------------------------------- rodapés
+
+# O WordPress cola isto ao fim de tudo o que sai no feed.
+_POST_WP = re.compile(r"<p>\s*The post\s+.{0,400}?appeared first on.{0,200}?</p>", re.I | re.S)
+_PARTILHA = re.compile(r"facebook|twitter|whatsapp|telegram|linkedin|e-?mail|partilh|share|"
+                       r"imprimir|copiar\s+link|subscre|newsletter", re.I)
+
+
+def _lista_e_so_partilha(bloco: str) -> bool:
+    texto = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", bloco)).strip()
+    if len(texto) > 220:
+        return False                      # lista longa é conteúdo, não barra de partilha
+    if not texto:
+        return True                       # lista vazia: só ícones que não sobreviveram
+    palavras = [p for p in re.split(r"[\s,·|]+", texto) if p]
+    return sum(1 for p in palavras if _PARTILHA.search(p)) >= max(1, len(palavras) * 0.5)
+
+
+def podar_rodape(html: str) -> str:
+    """Tira barras de partilha e assinaturas automáticas do fim do artigo."""
+    if not html:
+        return ""
+    html = _POST_WP.sub("", html)
+    for bloco in re.findall(r"<(?:ul|ol)\b.*?</(?:ul|ol)>", html, re.S):
+        if _lista_e_so_partilha(bloco):
+            html = html.replace(bloco, "")
+    # Espaço branco a mais só engorda o ficheiro; o browser colapsa-o na mesma.
+    html = re.sub(r">\s{2,}<", "><", html)
+    html = re.sub(r"(?:\s*<p>\s*(?:&nbsp;|\s)*</p>\s*)+", "", html)
+    return html.strip()
+
+
 def comprimento_texto(html: str) -> int:
     return len(re.sub(r"\s+", " ", unescape(re.sub(r"<[^>]+>", " ", html or ""))).strip())

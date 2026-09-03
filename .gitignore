@@ -1,3 +1,10 @@
 __pycache__/
 *.pyc
 .DS_Store
+
+# Gerados pela recolha e reconstruídos a cada publicação pela Action, que os
+# guarda em cache entre execuções. Mantê-los no git seria reescrever 150
+# ficheiros de cada vez que se corre o script.
+data/noticias.json
+data/artigos/
+data/sem-texto.json

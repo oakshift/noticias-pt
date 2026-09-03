@@ -73,8 +73,9 @@ Junta uma entrada a `fontes.json`:
 ou `referência`. Corre `--verificar` para confirmar que o feed responde antes de
 fazer commit.
 
-O `data/noticias.json` no repositório é só uma semente para o site funcionar mal
-se clona — quem manda é o ficheiro que a Action gera a cada publicação.
+Os dados (`data/`) não estão no git: são reconstruídos a cada publicação e a
+Action guarda-os em cache entre execuções. Depois de clonar, corre a recolha uma
+vez antes de abrir a app.
 
 ## Relógios adiantados
 
@@ -109,29 +110,55 @@ correr melhor ou pior do que a tua máquina.
 
 ## Ler dentro da app
 
-Clicar num título abre um leitor lateral em vez de saltar para o jornal. O que
-lá aparece depende do que **o editor decidiu sindicar no feed**, e há três casos:
+Clicar num título abre um leitor lateral com o artigo, em vez de saltar para o
+jornal. **74% dos artigos (146 em 195)** têm lá o texto completo.
 
-| | O que o leitor mostra |
+O texto vem por duas vias. Cinco fontes publicam o artigo inteiro no próprio RSS
+(Mensagem de Lisboa, Gerador, DN, ECO, Jornal Económico) e essas saem de graça.
+Para as outras, a recolha vai à página buscar o corpo, com o extractor em
+[scripts/extrair\_artigo.py](scripts/extrair_artigo.py).
+
+Nenhum método de extracção serve todos os sites, por isso são três, por ordem de
+fiabilidade: `articleBody` do **JSON-LD** quando existe (o site diz onde está o
+texto); senão **pontuação por densidade**, uma variante do algoritmo do
+Readability em que ganha o contentor com mais texto em parágrafos e menos
+ligações; senão nada, e fica-se pelo resumo.
+
+Quando falta o texto, a app diz **porquê** — e o motivo é registado na recolha,
+não inventado na interface:
+
+| Motivo | Onde acontece |
 |---|---|
-| O feed traz o artigo inteiro | O texto completo, tipografado para leitura |
-| O feed traz só o resumo | O resumo, e o porquê, com ligação ao original |
-| ...e o site aceita iframe | Um botão extra, "Ler aqui dentro", que embebe a página |
+| o artigo está reservado a assinantes | Jornal de Negócios (8 de 19) |
+| o site recusou a leitura automática | PÚBLICO (bloqueio anti-bot em todas) |
+| a página não traz mais texto do que este resumo | RTP (boletins de rádio, notícias curtas) |
 
-Neste momento publicam o artigo completo no feed: **Mensagem de Lisboa, Gerador,
-DN, ECO e Jornal Económico** (~50 artigos de cada vez). Aceitam iframe:
-**PÚBLICO, Observador, Shifter, Gerador e Jornal MAPA** — medido a cada recolha
-nos cabeçalhos `X-Frame-Options` e `frame-ancestors` de uma página de artigo
-real, não da raiz do site, que costuma responder outra coisa.
+Onde o site aceita iframe (**PÚBLICO, Observador, Shifter, Gerador, Jornal
+MAPA**) há ainda um botão "Ler aqui dentro". Isso é medido a cada recolha nos
+cabeçalhos `X-Frame-Options` e `frame-ancestors` de uma página de artigo real,
+não da raiz do site, que costuma responder outra coisa.
 
-O que **não** se faz é ir buscar o texto à página de quem só sindica o resumo.
-Isso seria contornar uma decisão de quem publica — e são meios que vivem de
-assinaturas e donativos.
+### Como a recolha se porta
 
-O corpo dos artigos é sanitizado por lista branca em [scripts/limpar_html.py](scripts/limpar_html.py)
-durante a recolha, não no browser: o HTML dos feeds é conteúdo de terceiros a ser
-injectado na página. Cada artigo vai para `data/artigos/<id>.json` e só é buscado
-ao abrir — assim o arranque continua a carregar ~140 KB em vez de megabytes.
+- **Respeita o `robots.txt`** de cada site, e o `crawl-delay` que ele declara
+  (a BUALA pede 10 s, o Gerador 3 s). Um site de cada vez por servidor, sites
+  diferentes em paralelo.
+- **Guarda em cache** o que já extraiu. A primeira execução leva ~90 s e vai à
+  rede ~150 vezes; as seguintes levam ~11 s e só buscam os artigos novos.
+- **Não repete o que falhou.** Um artigo sem texto fica registado 12 horas antes
+  de se tentar outra vez, senão eram 50 pedidos inúteis de meia em meia hora.
+- **Sanitiza tudo** por lista branca em [scripts/limpar\_html.py](scripts/limpar_html.py),
+  na recolha e não no browser: é HTML de terceiros a ser injectado na página.
+  Barras de partilha e rodapés automáticos do WordPress são podados.
+
+Cada artigo vai para `data/artigos/<id>.json` e só é buscado ao abrir, para o
+arranque continuar a carregar ~140 KB em vez de mais de um megabyte.
+
+Para saltar a extracção e ficar só pelo que os feeds dão:
+
+```bash
+python3 scripts/recolher.py --so-feeds
+```
 
 ## Atalhos
 

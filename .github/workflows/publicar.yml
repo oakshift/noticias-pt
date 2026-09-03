@@ -31,10 +31,22 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Recolher os feeds
+      # Sem isto, os ~150 artigos eram pedidos outra vez de meia em meia hora.
+      # Com cache, cada execução só vai à rede pelos artigos novos.
+      - name: Reaproveitar os textos já extraídos
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/artigos
+            data/sem-texto.json
+          key: corpos-${{ github.run_id }}
+          restore-keys: corpos-
+
+      - name: Recolher os feeds e os textos
         # O script sai com código 1 se nenhuma fonte responder; se só algumas
         # falharem publicamos na mesma com o aviso visível na app.
         run: python3 scripts/recolher.py || echo "::warning::Algumas fontes não responderam"
+        timeout-minutes: 20
 
       - name: Verificar que há dados para publicar
         run: |

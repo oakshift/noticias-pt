@@ -260,18 +260,17 @@
            referrerpolicy="no-referrer" onerror="this.remove()">` : ""}`;
   }
 
-  // Sem texto no feed não inventamos: mostra-se o resumo que o editor sindicou
-  // e dão-se as duas saídas honestas — o site original, ou o iframe se o site
-  // permitir ser embebido (medido na recolha, não adivinhado aqui).
+  // A recolha vai mesmo à página buscar o texto. Quando não o traz há sempre um
+  // motivo concreto — paywall, bloqueio anti-bot, ou a peça não ter mais texto
+  // (um boletim de rádio, por exemplo) — e é esse motivo que se mostra.
   function painelSemTexto(a) {
     const fonte = estado.dados?.fontes.find((f) => f.id === a.fonte);
     const embebivel = Boolean(fonte?.embebivel);
+    const motivo = a.semTexto || "não foi possível obter o texto completo";
     return `
       ${a.resumo ? `<p class="leitor-resumo">${escapar(a.resumo)}</p>` : ""}
       <div class="leitor-parcial">
-        <b>${escapar(a.fonteNome)} só publica o resumo no feed.</b>
-        O texto completo fica no site — é o editor que decide o que sindicar, e não vamos
-        buscá-lo por trás dessa decisão.
+        <b>Só o resumo, desta vez.</b> A recolha foi à página do artigo, mas ${escapar(motivo)}.
         <div class="botoes">
           <a class="botao" href="${escapar(a.url)}" target="_blank" rel="noopener noreferrer">Abrir no site ↗</a>
           ${embebivel ? `<button data-embeber="${a.id}">Ler aqui dentro</button>` : ""}
