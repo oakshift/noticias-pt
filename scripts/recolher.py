@@ -249,28 +249,36 @@ def recolher_fonte(fonte: dict) -> tuple[dict, list[dict]]:
         "tema": fonte.get("tema", ""),
         "descricao": fonte.get("descricao", ""),
         "ok": False,
+        # "ok" | "bloqueada" (não dá para recolher, lê-se no site) | "falha" | "inativa"
+        "estado": "falha",
         "erro": "",
         "artigos": 0,
     }
     if not fonte.get("ativa", True):
+        estado["estado"] = "inativa"
         estado["erro"] = "desativada em fontes.json"
         return estado, []
     try:
         xml_bruto = buscar(fonte["feed"])
         nos = itens_do_feed(xml_bruto)
         if not nos:
-            estado["erro"] = "o feed não devolveu artigos (resposta sem <item>/<entry>)"
-            return estado, []
+            raise ValueError("o feed não devolveu artigos (resposta sem <item>/<entry>)")
         artigos = [a for a in (converter(no, fonte) for no in nos) if a]
         artigos.sort(key=lambda a: a["publicado"] or "", reverse=True)
         artigos = artigos[:MAX_POR_FONTE]
         estado["ok"] = True
+        estado["estado"] = "ok"
         estado["artigos"] = len(artigos)
         return estado, artigos
     except urllib.error.HTTPError as erro:
         estado["erro"] = f"HTTP {erro.code}" + (" (bloqueio anti-bot)" if erro.code in (403, 429) else "")
     except Exception as erro:  # noqa: BLE001
         estado["erro"] = str(erro)[:120] or type(erro).__name__
+    # Meios que sabemos que bloqueiam a recolha não são uma avaria: são para ler
+    # no site. Só passam a "falha" se o bloqueio deixar de estar documentado.
+    if fonte.get("bloqueio"):
+        estado["estado"] = "bloqueada"
+        estado["erro"] = fonte["bloqueio"]
     return estado, []
 
 
@@ -321,7 +329,7 @@ def main() -> int:
     estados.sort(key=lambda e: (e["tipo"] != "independente", e["nome"].lower()))
     ok = sum(1 for e in estados if e["ok"])
     for estado in estados:
-        marca = "  ok" if estado["ok"] else ("  --" if "desativada" in estado["erro"] else "FALHA")
+        marca = {"ok": "  ok", "bloqueada": " site", "inativa": "  --"}.get(estado["estado"], "FALHA")
         print(f"{marca}  {estado['nome']:<24} {estado['artigos']:>3} artigos  {estado['erro']}")
     print(f"\n{ok}/{len(estados)} fontes responderam · {len(recentes)} artigos únicos "
           f"nos últimos {DIAS_JANELA} dias")

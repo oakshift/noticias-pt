@@ -53,18 +53,30 @@ Junta uma entrada a `fontes.json`:
 ```
 
 `tipo` só tem dois valores: `independente` (conta para o filtro "só independentes")
-ou `referência`. Corre `--verificar` para confirmar que o feed responde antes de fazer commit.
+ou `referência`. Corre `--verificar` para confirmar que o feed responde antes de
+fazer commit.
 
-## Fontes que bloqueiam a recolha
+O `data/noticias.json` no repositório é só uma semente para o site funcionar mal
+se clona — quem manda é o ficheiro que a Action gera a cada publicação.
 
-Alguns meios estão atrás de Cloudflare ou limitam pedidos automáticos e devolvem
-403/429. A app **não esconde isso**: mostra um aviso no topo com ligação directa ao
-site de cada fonte em falta. Se uma fonte falhar sempre, o mais correcto é
-desactivá-la (`"ativa": false`) e ler no site.
+## Fontes que não deixam recolher
 
-À data de construção estavam nesta situação: **Fumaça** (403), **PÁGINA UM** (429
-intermitente) e **Setenta e Quatro** (não publica RSS). Os runners do GitHub têm
-outro IP, por isso podem correr melhor ou pior do que a tua máquina.
+Alguns meios estão atrás de Cloudflare, limitam pedidos automáticos, ou
+simplesmente não publicam RSS. Contornar isso seria passar por cima de uma
+escolha do site, por isso não se faz. Em vez disso documenta-se:
+
+```json
+"bloqueio": "Bloqueia a recolha automática (Cloudflare)."
+```
+
+Uma fonte com `bloqueio` continua a ser tentada em cada recolha — se abrirem o
+feed, entra sozinha. Enquanto falhar, aparece na barra lateral em **"Sem feed —
+ler no site"**, com ligação directa, em vez de um erro. O aviso vermelho no topo
+fica reservado a avarias inesperadas, que é o que merece atenção.
+
+À data de construção: **Fumaça** (403), **PÁGINA UM** (429) e **Setenta e
+Quatro** (não publica RSS). Os runners do GitHub têm outro IP, por isso podem
+correr melhor ou pior do que a tua máquina.
 
 ## Na app
 

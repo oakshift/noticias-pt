@@ -22,6 +22,7 @@
     artigos: $("#artigos"), avisos: $("#avisos"), fontes: $("#lista-fontes"),
     temas: $("#lista-temas"), pesquisa: $("#pesquisa"), carimbo: $("#carimbo"),
     rodape: $("#rodape-estado"), indep: $("#btn-indep"),
+    noSite: $("#grupo-no-site"), listaNoSite: $("#lista-no-site"),
   };
 
   // ------------------------------------------------------------ persistência
@@ -159,7 +160,10 @@
     for (const a of estado.dados?.artigos ?? []) contagem[a.fonte] = (contagem[a.fonte] || 0) + 1;
 
     const visiveis = fontes.filter((f) => !estado.soIndependentes || f.tipo === "independente");
-    el.fontes.innerHTML = visiveis.map((f) => `
+    const recolhidas = visiveis.filter((f) => f.estado !== "bloqueada" && f.estado !== "inativa");
+    const soNoSite = visiveis.filter((f) => f.estado === "bloqueada");
+
+    el.fontes.innerHTML = recolhidas.map((f) => `
       <button class="fonte-btn${f.tipo === "independente" ? " indep" : ""}${f.ok ? "" : " falhou"}"
               data-fonte="${f.id}" aria-pressed="${estado.fonte === f.id}"
               title="${escapar(f.descricao)}${f.ok ? "" : ` — indisponível: ${escapar(f.erro)}`}">
@@ -167,6 +171,18 @@
         <span class="nome">${escapar(f.nome)}</span>
         <span class="n">${contagem[f.id] || 0}</span>
       </button>`).join("");
+
+    // Meios que não deixam recolher o feed continuam a valer a pena: entram como
+    // ligação directa, não como erro.
+    el.noSite.hidden = soNoSite.length === 0;
+    el.listaNoSite.innerHTML = soNoSite.map((f) => `
+      <a class="fonte-btn fonte-ligacao${f.tipo === "independente" ? " indep" : ""}"
+         href="${escapar(f.site)}" target="_blank" rel="noopener noreferrer"
+         title="${escapar(f.descricao)} — ${escapar(f.erro)}">
+        <span class="pastilha" aria-hidden="true"></span>
+        <span class="nome">${escapar(f.nome)}</span>
+        <span class="seta" aria-hidden="true">↗</span>
+      </a>`).join("");
 
     // Só temas que têm mesmo artigos — uma fonte pode responder e não ter nada na janela.
     const comArtigos = new Set(visiveis.filter((f) => contagem[f.id]).map((f) => f.id));
@@ -179,7 +195,7 @@
   }
 
   function renderizarAvisos() {
-    const falhadas = (estado.dados?.fontes ?? []).filter((f) => !f.ok && !f.erro.includes("desativada"));
+    const falhadas = (estado.dados?.fontes ?? []).filter((f) => f.estado === "falha");
     if (!falhadas.length) { el.avisos.innerHTML = ""; return; }
     const links = falhadas.map((f) =>
       `<a href="${escapar(f.site)}" target="_blank" rel="noopener noreferrer">${escapar(f.nome)}</a>`).join(", ");
@@ -187,7 +203,7 @@
       <div class="aviso">
         <span aria-hidden="true">⚠</span>
         <span><b>${falhadas.length} ${falhadas.length === 1 ? "fonte não respondeu" : "fontes não responderam"}</b>
-        na última recolha (bloqueio anti-bot ou feed em baixo): ${links}. Podes ler directamente no site.</span>
+        na última recolha: ${links}. Deve ser passageiro — podes ler directamente no site.</span>
       </div>`;
   }
 

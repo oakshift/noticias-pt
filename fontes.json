@@ -1,5 +1,5 @@
 {
-  "_nota": "Lista de fontes. Edita este ficheiro para adicionar/remover meios. 'ativa': false ignora a fonte na recolha.",
+  "_nota": "Lista de fontes. Edita para adicionar/remover meios. 'ativa': false ignora a fonte por completo. 'bloqueio' documenta um meio que não dá para recolher automaticamente: continua a ser tentado, mas se falhar aparece na app como 'ler no site' em vez de erro.",
   "fontes": [
     {
       "id": "fumaca",
@@ -9,7 +9,8 @@
       "tipo": "independente",
       "tema": "investigação",
       "descricao": "Jornalismo de investigação sem fins lucrativos, financiado por leitores.",
-      "ativa": true
+      "ativa": true,
+      "bloqueio": "Bloqueia a recolha automática (Cloudflare)."
     },
     {
       "id": "paginaum",
@@ -19,7 +20,8 @@
       "tipo": "independente",
       "tema": "investigação",
       "descricao": "Investigação e fiscalização do poder, sem publicidade institucional.",
-      "ativa": true
+      "ativa": true,
+      "bloqueio": "Limita pedidos automáticos (HTTP 429)."
     },
     {
       "id": "divergente",
@@ -88,8 +90,9 @@
       "site": "https://setentaequatro.pt",
       "tipo": "independente",
       "tema": "investigação",
-      "descricao": "Investigação sobre poder e democracia. Sem feed RSS público — ver no site.",
-      "ativa": false
+      "descricao": "Investigação sobre poder e democracia.",
+      "ativa": true,
+      "bloqueio": "Não publica feed RSS."
     },
     {
       "id": "publico",

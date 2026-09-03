@@ -140,6 +140,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .fonte-btn .pastilha { width: 6px; height: 6px; border-radius: 50%; background: var(--borda-forte); flex: none; }
 .fonte-btn.indep .pastilha { background: var(--independente); }
 .fonte-btn.falhou { opacity: .55; }
+.fonte-ligacao { text-decoration: none; }
+.fonte-ligacao .seta { font-size: 11px; color: var(--texto-3); }
+.fonte-ligacao:hover .seta { color: var(--destaque); }
 .fonte-btn.falhou .pastilha { background: #c2544a; }
 
 .interruptor {
