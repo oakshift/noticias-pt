@@ -319,6 +319,33 @@ def aceita_iframe(url: str) -> bool:
         return False
 
 
+def corrigir_relogios_adiantados(artigos: list[dict], agora: datetime) -> None:
+    """Endireita fontes cujo relógio está à frente do nosso.
+
+    A RTP data os boletins pela hora de emissão, que fica cerca de uma hora no
+    futuro. Sem correcção, esses artigos ficam colados ao topo durante uma hora,
+    por cima de notícias que saíram mesmo agora — e limitá-los ao presente só os
+    empata todos lá em cima.
+
+    A regra: se o artigo mais recente de uma fonte está no futuro, é porque a
+    fonte está adiantada nessa medida. Recua-se a fonte inteira por esse desvio,
+    o que a põe no sítio certo em relação às outras e preserva a ordem interna.
+    O que o feed dizia fica em "publicadoFeed" e a app mostra-o ao passar o rato.
+    """
+    por_fonte: dict[str, list[dict]] = {}
+    for artigo in artigos:
+        por_fonte.setdefault(artigo["fonte"], []).append(artigo)
+
+    for daquela_fonte in por_fonte.values():
+        datas = [datetime.fromisoformat(a["publicado"]) for a in daquela_fonte]
+        desvio = max(datas) - agora
+        if desvio.total_seconds() <= 60:      # margem para relógios normais
+            continue
+        for artigo, data in zip(daquela_fonte, datas):
+            artigo["publicadoFeed"] = artigo["publicado"]
+            artigo["publicado"] = (data - desvio).isoformat()
+
+
 def deduplicar(artigos: list[dict]) -> list[dict]:
     vistos_url: set[str] = set()
     vistos_titulo: set[str] = set()
@@ -360,6 +387,7 @@ def main() -> int:
         if datetime.fromisoformat(artigo["publicado"]) >= limite:
             recentes.append(artigo)
 
+    corrigir_relogios_adiantados(recentes, agora)
     recentes.sort(key=lambda a: a["publicado"], reverse=True)
     recentes = deduplicar(recentes)
 

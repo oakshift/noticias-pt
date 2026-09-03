@@ -47,6 +47,9 @@
 
   function relativo(iso) {
     const minutos = Math.round((Date.now() - new Date(iso)) / 60000);
+    // Datas no futuro existem mesmo: a RTP publica os boletins pela hora de
+    // emissão. Sem isto, "há -56 min" caía todo em "agora mesmo".
+    if (minutos < -1) return `às ${fmtHora.format(new Date(iso))}`;
     if (minutos < 1) return "agora mesmo";
     if (minutos < 60) return `há ${minutos} min`;
     const horas = Math.round(minutos / 60);
@@ -71,6 +74,15 @@
     const ontem = new Date(hoje); ontem.setDate(hoje.getDate() - 1);
     if (chave(data) === chave(ontem)) return "Ontem";
     return fmtDia.format(data);
+  }
+
+  // Quando a fonte tinha o relógio adiantado guardamos o que o feed dizia, para
+  // a data mostrada nunca ser um número sem explicação possível.
+  function legendaData(a) {
+    const mostrada = new Date(a.publicado).toLocaleString("pt-PT");
+    if (!a.publicadoFeed) return mostrada;
+    return `${mostrada} — o feed de ${a.fonteNome} indicava ` +
+      `${new Date(a.publicadoFeed).toLocaleString("pt-PT")}, com o relógio adiantado`;
   }
 
   const escapar = (s) => String(s ?? "").replace(/[&<>"']/g,
@@ -120,7 +132,7 @@
         <div class="artigo-texto">
           <div class="meta">
             <span class="selo${indep ? " indep" : ""}">${escapar(a.fonteNome)}</span>
-            <span title="${escapar(new Date(a.publicado).toLocaleString("pt-PT"))}">${escapar(quando(a.publicado))}</span>
+            <span title="${escapar(legendaData(a))}">${escapar(quando(a.publicado))}</span>
             ${a.autor ? `<span class="sep">·</span><span>${escapar(a.autor)}</span>` : ""}
           </div>
           <h3><a href="${escapar(a.url)}" target="_blank" rel="noopener noreferrer">${escapar(a.titulo)}</a></h3>
@@ -241,7 +253,7 @@
       <h1 id="leitor-titulo">${escapar(a.titulo)}</h1>
       <div class="leitor-meta">
         <span class="selo${a.tipo === "independente" ? " indep" : ""}">${escapar(a.fonteNome)}</span>
-        <span>${escapar(new Date(a.publicado).toLocaleString("pt-PT", { dateStyle: "long", timeStyle: "short" }))}</span>
+        <span title="${escapar(legendaData(a))}">${escapar(new Date(a.publicado).toLocaleString("pt-PT", { dateStyle: "long", timeStyle: "short" }))}</span>
         ${a.autor ? `<span class="sep">·</span><span>${escapar(a.autor)}</span>` : ""}
       </div>
       ${a.imagem ? `<img class="leitor-capa" src="${escapar(a.imagem)}" alt=""

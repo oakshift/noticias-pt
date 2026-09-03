@@ -54,6 +54,10 @@
 }
 
 * { box-sizing: border-box; }
+/* O [hidden] do browser vem da folha do user-agent e perde para qualquer
+   display: do autor. Sem isto, .leitor { display: flex } mantinha o painel
+   de leitura visível por cima da página inteira. */
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
