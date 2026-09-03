@@ -488,6 +488,16 @@
   document.addEventListener("visibilitychange", () => { if (!document.hidden) renderizarCarimbo(); });
 
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    // A casca é servida da cache primeiro, para arrancar depressa e funcionar
+    // offline. O reverso é que uma versão nova só apareceria na visita
+    // seguinte: quando o worker novo assume o controlo, recarregamos uma vez.
+    const jaTinhaWorker = Boolean(navigator.serviceWorker.controller);
+    let aRecarregar = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!jaTinhaWorker || aRecarregar) return;   // primeira instalação não conta
+      aRecarregar = true;
+      location.reload();
+    });
     addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
   }
 })();

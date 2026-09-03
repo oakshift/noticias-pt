@@ -35,6 +35,23 @@ Para testar só os feeds, sem escrever nada:
 python3 scripts/recolher.py --verificar
 ```
 
+## Ver a app a funcionar
+
+```bash
+python3 scripts/testar_no_browser.py            # a app, já carregada
+python3 scripts/testar_no_browser.py --leitor   # abre um artigo e testa fechá-lo
+```
+
+Abre a app num Firefox headless e grava uma fotografia em
+`~/noticias-teste-browser/`, com uma faixa no fundo que fica **verde** se não
+houve erros de JavaScript e **vermelha** se houve.
+
+Isto existe porque inspeccionar ficheiros não chega. O painel de leitura esteve
+uma versão inteira visível por cima da página, sem forma de o fechar, e nenhuma
+verificação de CSS ou de JS apanhou: `[hidden]` vem da folha do *user-agent* e
+perde para qualquer `display:` do autor, e `.leitor` traz `display: flex`. Só
+abrir a página no browser mostrou isso.
+
 ## Adicionar uma fonte
 
 Junta uma entrada a `fontes.json`:
@@ -58,6 +75,18 @@ fazer commit.
 
 O `data/noticias.json` no repositório é só uma semente para o site funcionar mal
 se clona — quem manda é o ficheiro que a Action gera a cada publicação.
+
+## Relógios adiantados
+
+A RTP data os boletins de rádio pela hora de emissão, cerca de uma hora no
+futuro. Sem correcção esses artigos colam-se ao topo durante uma hora, por cima
+de notícias acabadas de sair, e mostram todos "agora mesmo". Limitá-los ao
+presente não resolve — só os empata lá em cima.
+
+A recolha detecta o desvio por fonte (se o artigo mais recente de uma fonte está
+no futuro, a fonte está adiantada nessa medida) e recua a fonte inteira, o que a
+põe no sítio certo em relação às outras e preserva a ordem interna. O que o feed
+dizia fica em `publicadoFeed`, e a app mostra-o ao passar o rato pela data.
 
 ## Fontes que não deixam recolher
 
