@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Notícias PT · imprensa independente</title>
+<meta name="description" content="Agregador de notícias da imprensa independente portuguesa e de meios de referência. Sem rastreio, sem algoritmo.">
+<meta name="theme-color" content="#f7f6f3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14130f" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
+<link rel="stylesheet" href="./assets/styles.css">
+</head>
+<body>
+
+<header class="topo">
+  <div class="topo-interior">
+    <div class="marca">
+      <h1>Notícias<span class="ponto">.</span>pt</h1>
+      <small id="carimbo">a carregar…</small>
+    </div>
+
+    <div class="pesquisa">
+      <span class="lupa" aria-hidden="true">⌕</span>
+      <input id="pesquisa" type="search" placeholder="Pesquisar títulos e resumos" aria-label="Pesquisar notícias" autocomplete="off">
+      <kbd>/</kbd>
+    </div>
+
+    <div class="acoes">
+      <button class="icone" id="btn-tema" title="Alternar tema claro/escuro (t)" aria-label="Alternar tema">◐</button>
+      <button class="icone" id="btn-recarregar" title="Ir buscar dados novos (r)" aria-label="Recarregar">↻</button>
+    </div>
+  </div>
+</header>
+
+<div class="corpo">
+  <aside class="lateral">
+    <div class="grupo-lateral">
+      <button class="interruptor" id="btn-indep" aria-pressed="false">
+        <span class="calha" aria-hidden="true"></span>
+        <span>Só meios independentes</span>
+      </button>
+    </div>
+
+    <div class="grupo-lateral">
+      <h2>Fontes</h2>
+      <div class="lista-fontes" id="lista-fontes"></div>
+    </div>
+
+    <div class="grupo-lateral">
+      <h2>Temas</h2>
+      <div class="lista-fontes" id="lista-temas"></div>
+    </div>
+  </aside>
+
+  <main class="principal">
+    <div class="abas" role="tablist">
+      <button class="aba" role="tab" data-vista="tudo" aria-selected="true">Tudo <span class="contador" id="c-tudo">0</span></button>
+      <button class="aba" role="tab" data-vista="novos" aria-selected="false">Por ler <span class="contador" id="c-novos">0</span></button>
+      <button class="aba" role="tab" data-vista="guardados" aria-selected="false">Guardados <span class="contador" id="c-guardados">0</span></button>
+    </div>
+
+    <div id="avisos"></div>
+    <div id="artigos" class="artigos" aria-live="polite" aria-busy="true">
+      <div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div>
+    </div>
+  </main>
+</div>
+
+<footer class="rodape">
+  <p>
+    Os títulos e resumos pertencem a cada publicação e ligam sempre ao original.
+    Este agregador não guarda dados sobre ti: os artigos guardados e lidos ficam só neste browser.
+    <br>
+    Apoia o jornalismo independente — a maior parte destes meios vive de assinaturas e donativos.
+  </p>
+  <p id="rodape-estado"></p>
+</footer>
+
+<script src="./assets/app.js"></script>
+</body>
+</html>

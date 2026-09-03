@@ -1,0 +1,165 @@
+{
+  "_nota": "Lista de fontes. Edita este ficheiro para adicionar/remover meios. 'ativa': false ignora a fonte na recolha.",
+  "fontes": [
+    {
+      "id": "fumaca",
+      "nome": "Fumaça",
+      "feed": "https://fumaca.pt/feed/",
+      "site": "https://fumaca.pt",
+      "tipo": "independente",
+      "tema": "investigação",
+      "descricao": "Jornalismo de investigação sem fins lucrativos, financiado por leitores.",
+      "ativa": true
+    },
+    {
+      "id": "paginaum",
+      "nome": "PÁGINA UM",
+      "feed": "https://paginaum.pt/feed/",
+      "site": "https://paginaum.pt",
+      "tipo": "independente",
+      "tema": "investigação",
+      "descricao": "Investigação e fiscalização do poder, sem publicidade institucional.",
+      "ativa": true
+    },
+    {
+      "id": "divergente",
+      "nome": "Divergente",
+      "feed": "https://divergente.pt/feed/",
+      "site": "https://divergente.pt",
+      "tipo": "independente",
+      "tema": "reportagem",
+      "descricao": "Jornalismo narrativo de fundo sobre direitos humanos e desigualdade.",
+      "ativa": true
+    },
+    {
+      "id": "mensagem",
+      "nome": "Mensagem de Lisboa",
+      "feed": "https://amensagem.pt/feed/",
+      "site": "https://amensagem.pt",
+      "tipo": "independente",
+      "tema": "local",
+      "descricao": "Jornalismo de proximidade sobre Lisboa e quem nela vive.",
+      "ativa": true
+    },
+    {
+      "id": "mapa",
+      "nome": "Jornal MAPA",
+      "feed": "https://jornalmapa.pt/feed/",
+      "site": "https://jornalmapa.pt",
+      "tipo": "independente",
+      "tema": "sociedade",
+      "descricao": "Jornal trimestral independente, ecologia social e movimentos de base.",
+      "ativa": true
+    },
+    {
+      "id": "shifter",
+      "nome": "Shifter",
+      "feed": "https://shifter.pt/feed/",
+      "site": "https://shifter.pt",
+      "tipo": "independente",
+      "tema": "tecnologia",
+      "descricao": "Tecnologia, cultura digital e o seu impacto social.",
+      "ativa": true
+    },
+    {
+      "id": "gerador",
+      "nome": "Gerador",
+      "feed": "https://gerador.eu/feed/",
+      "site": "https://gerador.eu",
+      "tipo": "independente",
+      "tema": "cultura",
+      "descricao": "Cultura, criatividade e cidadania.",
+      "ativa": true
+    },
+    {
+      "id": "buala",
+      "nome": "BUALA",
+      "feed": "https://www.buala.org/pt/rss.xml",
+      "site": "https://www.buala.org/pt",
+      "tipo": "independente",
+      "tema": "cultura",
+      "descricao": "Cultura contemporânea africana e crítica pós-colonial.",
+      "ativa": true
+    },
+    {
+      "id": "setentaequatro",
+      "nome": "Setenta e Quatro",
+      "feed": "https://setentaequatro.pt/feed/",
+      "site": "https://setentaequatro.pt",
+      "tipo": "independente",
+      "tema": "investigação",
+      "descricao": "Investigação sobre poder e democracia. Sem feed RSS público — ver no site.",
+      "ativa": false
+    },
+    {
+      "id": "publico",
+      "nome": "PÚBLICO",
+      "feed": "https://feeds.feedburner.com/PublicoRSS",
+      "site": "https://www.publico.pt",
+      "tipo": "referência",
+      "tema": "geral",
+      "descricao": "Diário generalista de referência.",
+      "ativa": true
+    },
+    {
+      "id": "observador",
+      "nome": "Observador",
+      "feed": "https://observador.pt/feed/",
+      "site": "https://observador.pt",
+      "tipo": "referência",
+      "tema": "geral",
+      "descricao": "Diário digital generalista.",
+      "ativa": true
+    },
+    {
+      "id": "dn",
+      "nome": "Diário de Notícias",
+      "feed": "https://www.dn.pt/feed/",
+      "site": "https://www.dn.pt",
+      "tipo": "referência",
+      "tema": "geral",
+      "descricao": "Diário generalista.",
+      "ativa": true
+    },
+    {
+      "id": "rtp",
+      "nome": "RTP Notícias",
+      "feed": "https://www.rtp.pt/noticias/rss",
+      "site": "https://www.rtp.pt/noticias",
+      "tipo": "referência",
+      "tema": "geral",
+      "descricao": "Serviço público de informação.",
+      "ativa": true
+    },
+    {
+      "id": "eco",
+      "nome": "ECO",
+      "feed": "https://eco.sapo.pt/feed/",
+      "site": "https://eco.sapo.pt",
+      "tipo": "referência",
+      "tema": "economia",
+      "descricao": "Economia, empresas e mercados.",
+      "ativa": true
+    },
+    {
+      "id": "negocios",
+      "nome": "Jornal de Negócios",
+      "feed": "https://www.jornaldenegocios.pt/rss",
+      "site": "https://www.jornaldenegocios.pt",
+      "tipo": "referência",
+      "tema": "economia",
+      "descricao": "Diário económico.",
+      "ativa": true
+    },
+    {
+      "id": "economico",
+      "nome": "Jornal Económico",
+      "feed": "https://jornaleconomico.pt/feed",
+      "site": "https://jornaleconomico.pt",
+      "tipo": "referência",
+      "tema": "economia",
+      "descricao": "Semanário económico.",
+      "ativa": true
+    }
+  ]
+}

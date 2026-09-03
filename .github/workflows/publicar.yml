@@ -1,0 +1,54 @@
+name: Recolher e publicar
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Minutos fora da hora certa: o GitHub atrasa muito os crons em minutos redondos.
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Uma publicação de cada vez; não cancelamos uma recolha a meio.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.publicacao.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Recolher os feeds
+        # O script sai com código 1 se nenhuma fonte responder; se só algumas
+        # falharem publicamos na mesma com o aviso visível na app.
+        run: python3 scripts/recolher.py || echo "::warning::Algumas fontes não responderam"
+
+      - name: Verificar que há dados para publicar
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          d = json.load(open("data/noticias.json"))
+          n = len(d["artigos"])
+          print(f"{n} artigos, {sum(1 for f in d['fontes'] if f['ok'])} fontes ok")
+          sys.exit(1 if n == 0 else 0)
+          PY
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: publicacao
+        uses: actions/deploy-pages@v4
