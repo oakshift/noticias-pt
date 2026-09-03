@@ -78,15 +78,44 @@ fica reservado a avarias inesperadas, que é o que merece atenção.
 Quatro** (não publica RSS). Os runners do GitHub têm outro IP, por isso podem
 correr melhor ou pior do que a tua máquina.
 
-## Na app
+## Ler dentro da app
+
+Clicar num título abre um leitor lateral em vez de saltar para o jornal. O que
+lá aparece depende do que **o editor decidiu sindicar no feed**, e há três casos:
+
+| | O que o leitor mostra |
+|---|---|
+| O feed traz o artigo inteiro | O texto completo, tipografado para leitura |
+| O feed traz só o resumo | O resumo, e o porquê, com ligação ao original |
+| ...e o site aceita iframe | Um botão extra, "Ler aqui dentro", que embebe a página |
+
+Neste momento publicam o artigo completo no feed: **Mensagem de Lisboa, Gerador,
+DN, ECO e Jornal Económico** (~50 artigos de cada vez). Aceitam iframe:
+**PÚBLICO, Observador, Shifter, Gerador e Jornal MAPA** — medido a cada recolha
+nos cabeçalhos `X-Frame-Options` e `frame-ancestors` de uma página de artigo
+real, não da raiz do site, que costuma responder outra coisa.
+
+O que **não** se faz é ir buscar o texto à página de quem só sindica o resumo.
+Isso seria contornar uma decisão de quem publica — e são meios que vivem de
+assinaturas e donativos.
+
+O corpo dos artigos é sanitizado por lista branca em [scripts/limpar_html.py](scripts/limpar_html.py)
+durante a recolha, não no browser: o HTML dos feeds é conteúdo de terceiros a ser
+injectado na página. Cada artigo vai para `data/artigos/<id>.json` e só é buscado
+ao abrir — assim o arranque continua a carregar ~140 KB em vez de megabytes.
+
+## Atalhos
 
 | Atalho | Acção |
 |---|---|
-| `/` | pesquisar |
+| `/` | pesquisar · `Enter` abre o primeiro resultado |
 | `i` | alternar "só independentes" |
 | `t` | tema claro/escuro |
 | `r` | ir buscar dados novos |
-| `Esc` | limpar a pesquisa |
+| `Esc` | fechar o leitor, ou limpar a pesquisa |
+
+Com o leitor aberto: `j`/`k` (ou `↓`/`↑`) saltam de artigo, `s` guarda,
+`o` abre o original. `⌘`/`Ctrl`+clique num título continua a ir direito ao jornal.
 
 Guardados e lidos ficam no `localStorage` — só neste browser, nunca saem daqui.
 

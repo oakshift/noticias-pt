@@ -1,5 +1,5 @@
 /* Service worker: casca em cache para arranque instantâneo e leitura offline. */
-const CACHE = "noticias-v1";
+const CACHE = "noticias-v2";
 const CASCA = ["./", "./index.html", "./assets/styles.css", "./assets/app.js", "./manifest.webmanifest"];
 
 self.addEventListener("install", (evento) => {

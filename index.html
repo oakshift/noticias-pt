@@ -72,6 +72,22 @@
   </main>
 </div>
 
+<div class="leitor-fundo" id="leitor-fundo" hidden></div>
+<aside class="leitor" id="leitor" hidden role="dialog" aria-modal="true" aria-labelledby="leitor-titulo">
+  <header class="leitor-topo">
+    <button class="icone" id="leitor-fechar" title="Fechar (Esc)" aria-label="Fechar leitor">✕</button>
+    <div class="leitor-nav">
+      <button class="icone" id="leitor-anterior" title="Artigo anterior (k)" aria-label="Artigo anterior">↑</button>
+      <button class="icone" id="leitor-seguinte" title="Artigo seguinte (j)" aria-label="Artigo seguinte">↓</button>
+    </div>
+    <button class="icone" id="leitor-guardar" aria-pressed="false" title="Guardar" aria-label="Guardar">☆</button>
+    <a class="leitor-original" id="leitor-original" href="#" target="_blank" rel="noopener noreferrer">Abrir original ↗</a>
+  </header>
+  <div class="leitor-corpo" id="leitor-corpo" tabindex="-1">
+    <h1 id="leitor-titulo"></h1>
+  </div>
+</aside>
+
 <footer class="rodape">
   <p>
     Os títulos e resumos pertencem a cada publicação e ligam sempre ao original.

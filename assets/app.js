@@ -15,7 +15,11 @@
     pesquisa: "",
     guardados: carregarConjunto(CHAVES.guardados),
     lidos: carregarConjunto(CHAVES.lidos),
+    aberto: null,          // artigo no leitor
+    visiveis: [],          // lista filtrada actual, para o ↑/↓ do leitor
   };
+
+  const corposEmCache = new Map();
 
   const $ = (sel) => document.querySelector(sel);
   const el = {
@@ -23,6 +27,8 @@
     temas: $("#lista-temas"), pesquisa: $("#pesquisa"), carimbo: $("#carimbo"),
     rodape: $("#rodape-estado"), indep: $("#btn-indep"),
     noSite: $("#grupo-no-site"), listaNoSite: $("#lista-no-site"),
+    leitor: $("#leitor"), leitorFundo: $("#leitor-fundo"), leitorCorpo: $("#leitor-corpo"),
+    leitorOriginal: $("#leitor-original"), leitorGuardar: $("#leitor-guardar"),
   };
 
   // ------------------------------------------------------------ persistência
@@ -129,6 +135,7 @@
 
   function renderizarArtigos() {
     const lista = filtrar();
+    estado.visiveis = lista;
     el.artigos.setAttribute("aria-busy", "false");
 
     if (!lista.length) {
@@ -218,6 +225,99 @@
 
   const renderizar = () => { renderizarLateral(); renderizarAvisos(); renderizarArtigos(); renderizarCarimbo(); };
 
+  // -------------------------------------------------------------- leitor
+  async function corpoDe(artigo) {
+    if (!artigo.temTexto) return null;
+    if (corposEmCache.has(artigo.id)) return corposEmCache.get(artigo.id);
+    const resposta = await fetch(`./data/artigos/${artigo.id}.json`);
+    if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+    const { html } = await resposta.json();
+    corposEmCache.set(artigo.id, html);
+    return html;
+  }
+
+  function cabecalhoLeitor(a) {
+    return `
+      <h1 id="leitor-titulo">${escapar(a.titulo)}</h1>
+      <div class="leitor-meta">
+        <span class="selo${a.tipo === "independente" ? " indep" : ""}">${escapar(a.fonteNome)}</span>
+        <span>${escapar(new Date(a.publicado).toLocaleString("pt-PT", { dateStyle: "long", timeStyle: "short" }))}</span>
+        ${a.autor ? `<span class="sep">·</span><span>${escapar(a.autor)}</span>` : ""}
+      </div>
+      ${a.imagem ? `<img class="leitor-capa" src="${escapar(a.imagem)}" alt=""
+           referrerpolicy="no-referrer" onerror="this.remove()">` : ""}`;
+  }
+
+  // Sem texto no feed não inventamos: mostra-se o resumo que o editor sindicou
+  // e dão-se as duas saídas honestas — o site original, ou o iframe se o site
+  // permitir ser embebido (medido na recolha, não adivinhado aqui).
+  function painelSemTexto(a) {
+    const fonte = estado.dados?.fontes.find((f) => f.id === a.fonte);
+    const embebivel = Boolean(fonte?.embebivel);
+    return `
+      ${a.resumo ? `<p class="leitor-resumo">${escapar(a.resumo)}</p>` : ""}
+      <div class="leitor-parcial">
+        <b>${escapar(a.fonteNome)} só publica o resumo no feed.</b>
+        O texto completo fica no site — é o editor que decide o que sindicar, e não vamos
+        buscá-lo por trás dessa decisão.
+        <div class="botoes">
+          <a class="botao" href="${escapar(a.url)}" target="_blank" rel="noopener noreferrer">Abrir no site ↗</a>
+          ${embebivel ? `<button data-embeber="${a.id}">Ler aqui dentro</button>` : ""}
+        </div>
+      </div>`;
+  }
+
+  function sincronizarBotoesLeitor() {
+    const a = estado.aberto;
+    if (!a) return;
+    const guardado = estado.guardados.has(a.id);
+    el.leitorGuardar.setAttribute("aria-pressed", String(guardado));
+    el.leitorGuardar.textContent = guardado ? "★" : "☆";
+    el.leitorGuardar.title = guardado ? "Remover dos guardados" : "Guardar para ler depois";
+    const posicao = estado.visiveis.findIndex((x) => x.id === a.id);
+    $("#leitor-anterior").disabled = posicao <= 0;
+    $("#leitor-seguinte").disabled = posicao < 0 || posicao >= estado.visiveis.length - 1;
+  }
+
+  async function abrirLeitor(artigo) {
+    estado.aberto = artigo;
+    el.leitor.hidden = false;
+    el.leitorFundo.hidden = false;
+    document.body.style.overflow = "hidden";
+    el.leitorOriginal.href = artigo.url;
+    el.leitorCorpo.scrollTop = 0;
+    el.leitorCorpo.innerHTML = cabecalhoLeitor(artigo) +
+      (artigo.temTexto ? `<div class="leitor-erro">a carregar o artigo…</div>` : painelSemTexto(artigo));
+    el.leitorCorpo.focus();
+    sincronizarBotoesLeitor();
+    marcarLido(artigo.id);
+
+    if (!artigo.temTexto) return;
+    try {
+      const html = await corpoDe(artigo);
+      if (estado.aberto?.id !== artigo.id) return;   // já mudou de artigo
+      el.leitorCorpo.innerHTML = cabecalhoLeitor(artigo) + `<div class="leitor-texto">${html}</div>`;
+    } catch (erro) {
+      if (estado.aberto?.id !== artigo.id) return;
+      el.leitorCorpo.innerHTML = cabecalhoLeitor(artigo) + painelSemTexto(artigo);
+    }
+  }
+
+  function fecharLeitor() {
+    estado.aberto = null;
+    el.leitor.hidden = true;
+    el.leitorFundo.hidden = true;
+    document.body.style.overflow = "";
+  }
+
+  function saltarArtigo(passo) {
+    if (!estado.aberto) return;
+    const posicao = estado.visiveis.findIndex((x) => x.id === estado.aberto.id);
+    if (posicao < 0) return;
+    const seguinte = estado.visiveis[posicao + passo];
+    if (seguinte) abrirLeitor(seguinte);
+  }
+
   // -------------------------------------------------------------- dados
   async function carregar({ forcar = false } = {}) {
     try {
@@ -239,6 +339,7 @@
     estado.guardados.has(id) ? estado.guardados.delete(id) : estado.guardados.add(id);
     guardarConjunto(CHAVES.guardados, estado.guardados);
     renderizarArtigos();
+    sincronizarBotoesLeitor();
   }
 
   function marcarLido(id) {
@@ -277,8 +378,41 @@
       return;
     }
 
+    const embeber = evento.target.closest("[data-embeber]");
+    if (embeber) {
+      const a = estado.aberto;
+      if (a) {
+        embeber.closest(".leitor-parcial").insertAdjacentHTML("afterend",
+          `<iframe class="leitor-quadro" src="${escapar(a.url)}" title="${escapar(a.titulo)}"
+             loading="lazy" referrerpolicy="no-referrer"
+             sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>`);
+        embeber.remove();
+      }
+      return;
+    }
+
     const ligacao = evento.target.closest(".artigo a[href]");
-    if (ligacao) marcarLido(ligacao.closest(".artigo").dataset.id);
+    if (ligacao) {
+      const artigo = estado.visiveis.find((x) => x.id === ligacao.closest(".artigo").dataset.id);
+      // Modificadores e botão do meio ficam com o comportamento normal do browser.
+      if (!artigo || evento.metaKey || evento.ctrlKey || evento.shiftKey || evento.altKey || evento.button !== 0) {
+        if (artigo) marcarLido(artigo.id);
+        return;
+      }
+      evento.preventDefault();
+      abrirLeitor(artigo);
+    }
+  });
+
+  // ------------------------------------------------------------ eventos do leitor
+  $("#leitor-fechar").addEventListener("click", fecharLeitor);
+  el.leitorFundo.addEventListener("click", fecharLeitor);
+  $("#leitor-anterior").addEventListener("click", () => saltarArtigo(-1));
+  $("#leitor-seguinte").addEventListener("click", () => saltarArtigo(1));
+  el.leitorGuardar.addEventListener("click", () => {
+    if (!estado.aberto) return;
+    alternarGuardado(estado.aberto.id);
+    sincronizarBotoesLeitor();
   });
 
   el.indep.addEventListener("click", () => {
@@ -308,7 +442,21 @@
 
   document.addEventListener("keydown", (evento) => {
     const aEscrever = /^(INPUT|TEXTAREA)$/.test(evento.target.tagName);
+
+    if (estado.aberto) {
+      if (evento.key === "Escape") { fecharLeitor(); return; }
+      if (aEscrever) return;
+      if (evento.key === "j" || evento.key === "ArrowDown") { evento.preventDefault(); saltarArtigo(1); return; }
+      if (evento.key === "k" || evento.key === "ArrowUp") { evento.preventDefault(); saltarArtigo(-1); return; }
+      if (evento.key === "s") { el.leitorGuardar.click(); return; }
+      if (evento.key === "o") { window.open(estado.aberto.url, "_blank", "noopener"); return; }
+      return;
+    }
+
     if (evento.key === "/" && !aEscrever) { evento.preventDefault(); el.pesquisa.focus(); return; }
+    if (evento.key === "Enter" && aEscrever && estado.visiveis[0]) {
+      el.pesquisa.blur(); abrirLeitor(estado.visiveis[0]); return;
+    }
     if (evento.key === "Escape" && aEscrever) { el.pesquisa.value = ""; estado.pesquisa = ""; el.pesquisa.blur(); renderizarArtigos(); return; }
     if (aEscrever || evento.metaKey || evento.ctrlKey || evento.altKey) return;
     if (evento.key === "t") $("#btn-tema").click();

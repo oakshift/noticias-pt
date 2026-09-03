@@ -25,9 +25,16 @@ import zlib
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from limpar_html import comprimento_texto, limpar  # noqa: E402
+
 RAIZ = Path(__file__).resolve().parent.parent
 FONTES = RAIZ / "fontes.json"
 SAIDA = RAIZ / "data" / "noticias.json"
+PASTA_ARTIGOS = RAIZ / "data" / "artigos"
+
+# Abaixo disto o "corpo" do feed é só um resumo repetido, não vale um leitor.
+MIN_TEXTO_LEITOR = 1200
 
 UA = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -222,6 +229,12 @@ def converter(no: ET.Element, fonte: dict) -> dict | None:
     )
     autor = texto_limpo(primeiro(no, "dc:creator", "author/name", "atom:author/atom:name", "author"), 80)
 
+    # Só há leitor quando o próprio editor sindica o artigo no feed. Quando o
+    # feed traz apenas um resumo, é isso que mostramos — ir buscar o texto à
+    # página seria contornar uma decisão de quem o publica.
+    corpo_limpo = limpar(primeiro(no, "content:encoded", "atom:content"))
+    tem_texto = comprimento_texto(corpo_limpo) >= MIN_TEXTO_LEITOR
+
     return {
         "id": hashlib.sha1(ligacao.encode()).hexdigest()[:16],
         "titulo": titulo,
@@ -234,6 +247,8 @@ def converter(no: ET.Element, fonte: dict) -> dict | None:
         "fonteNome": fonte["nome"],
         "tipo": fonte["tipo"],
         "tema": fonte.get("tema", ""),
+        "temTexto": tem_texto,
+        "_corpo": corpo_limpo if tem_texto else "",
     }
 
 
@@ -280,6 +295,28 @@ def recolher_fonte(fonte: dict) -> tuple[dict, list[dict]]:
         estado["estado"] = "bloqueada"
         estado["erro"] = fonte["bloqueio"]
     return estado, []
+
+
+def aceita_iframe(url: str) -> bool:
+    """Verifica se o site deixa ser embebido, lendo os cabeçalhos que o dizem.
+
+    Conservador: qualquer dúvida (erro de rede, cabeçalho estranho) conta como
+    não. Isto evita mostrar ao leitor um botão que só daria um painel em branco.
+    """
+    try:
+        pedido = urllib.request.Request(url, headers=CABECALHOS)
+        with urllib.request.urlopen(pedido, timeout=15, context=CTX) as resposta:
+            if (resposta.headers.get("X-Frame-Options") or "").strip():
+                return False
+            politica = resposta.headers.get("Content-Security-Policy") or ""
+        for directiva in politica.split(";"):
+            directiva = directiva.strip()
+            if directiva.startswith("frame-ancestors"):
+                origens = directiva.split()[1:]
+                return "*" in origens
+        return True
+    except Exception:  # noqa: BLE001
+        return False
 
 
 def deduplicar(artigos: list[dict]) -> list[dict]:
@@ -336,6 +373,44 @@ def main() -> int:
 
     if argumentos.verificar:
         return 0 if ok else 1
+
+
+    # Um artigo do feed da Mensagem chega a ter 10 mil caracteres. Se fossem
+    # todos para o JSON principal, o arranque da app passava a arrastar megabytes
+    # que quase ninguém lê. Vão para ficheiros próprios, buscados só ao abrir.
+    if PASTA_ARTIGOS.exists():
+        for antigo in PASTA_ARTIGOS.glob("*.json"):
+            antigo.unlink()
+    PASTA_ARTIGOS.mkdir(parents=True, exist_ok=True)
+
+    com_texto = 0
+    for artigo in recentes:
+        corpo = artigo.pop("_corpo", "")
+        if not corpo:
+            continue
+        (PASTA_ARTIGOS / f"{artigo['id']}.json").write_text(
+            json.dumps({"id": artigo["id"], "html": corpo}, ensure_ascii=False,
+                       separators=(",", ":")),
+            encoding="utf-8",
+        )
+        com_texto += 1
+
+    # Uma verificação por fonte, não por artigo — mas feita numa página de artigo
+    # real: a raiz do site manda cabeçalhos diferentes das páginas de notícia
+    # (o Jornal de Negócios deixa embeber a homepage e bloqueia os artigos).
+    amostra: dict[str, str] = {}
+    for artigo in recentes:
+        amostra.setdefault(artigo["fonte"], artigo["url"])
+
+    embebiveis = {}
+    with futures.ThreadPoolExecutor(max_workers=8) as piscina:
+        for identificador, aceita in zip(amostra, piscina.map(aceita_iframe, amostra.values())):
+            embebiveis[identificador] = aceita
+    for estado in estados:
+        estado["embebivel"] = embebiveis.get(estado["id"], False)
+
+    print(f"{com_texto} artigos com texto completo · "
+          f"{sum(embebiveis.values())} fontes aceitam iframe")
 
     SAIDA.parent.mkdir(parents=True, exist_ok=True)
     SAIDA.write_text(
